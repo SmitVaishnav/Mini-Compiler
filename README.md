@@ -14,9 +14,6 @@ A robust, Turing-complete programming language interpreter built entirely from s
 - [Key Features](#-key-features)
 - [Architecture](#-architecture)
 - [Installation & Usage](#-installation--usage)
-- [Language Syntax](#-language-syntax)
-- [Standard Library](#-standard-library)
-- [Future Roadmap](#-future-roadmap)
 
 ---
 
