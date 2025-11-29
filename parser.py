@@ -6,12 +6,13 @@ from .tokens import (
     INTEGER, PLUS, MINUS, MUL, DIV, LPAREN, RPAREN,
     LET, ID, ASSIGN, IF, ELSE, WHILE, PRINT, STRING,
     FOR, SEMI, TRUE, FALSE, LBRACE, RBRACE, GT, LT,
-    EQ, NEQ, EOF, DEF, RETURN, COMMA
+    EQ, NEQ, EOF, DEF, RETURN, COMMA, LBRACKET, RBRACKET
 )
 from .ast_nodes import (
     BinOp, Num, VarDecl, Var, Bool, Block, IfNode,
     WhileNode, PrintNode, AssignNode, String,
-    FunctionCallNode, FunctionDefNode, ReturnNode
+    FunctionCallNode, FunctionDefNode, ReturnNode,
+    ListNode, IndexNode
 )
 
 
@@ -44,8 +45,8 @@ class Parser:
             # This is the new, more helpful error!
             raise ParserError(f"Expected token {token_type}, but found {self.current_token.type}")
 
-    def primary(self):
-        """primary : INTEGER | ID | TRUE | FALSE | LPAREN expr RPAREN"""
+    def atom(self):
+        """Parse the most basic unit: Int, String, List, Id, or (Expr)"""
         token = self.current_token
 
         if token.type == LPAREN:
@@ -53,6 +54,8 @@ class Parser:
             node = self.expr() 
             self.eat(RPAREN)
             return node
+        elif token.type == LBRACKET:
+            return self.list_expr()
         elif token.type == INTEGER:
             self.eat(INTEGER)
             return Num(token)
@@ -60,24 +63,8 @@ class Parser:
             self.eat(STRING)
             return String(token)
         elif token.type == ID:
-            # We assume it's a variable first...
-            id_token = self.current_token
             self.eat(ID)
-            
-            # ...but if we see '(', it's actually a function call!
-            if self.current_token.type == LPAREN:
-                self.eat(LPAREN)
-                args = []
-                if self.current_token.type != RPAREN:
-                    args.append(self.expr())
-                    while self.current_token.type == COMMA:
-                        self.eat(COMMA)
-                        args.append(self.expr())
-                self.eat(RPAREN)
-                return FunctionCallNode(id_token.value, args)
-            else:
-                # It was just a variable
-                return Var(id_token)
+            return Var(token)
         elif token.type == TRUE:
             self.eat(TRUE)
             return Bool(token)
@@ -87,6 +74,46 @@ class Parser:
         
         else:
             self.error()
+    
+    def primary(self):
+        """
+        primary : atom ( call | index )*
+        Handles: x, x(), x[0], x()[0], x[0]()
+        """
+        # 1. Get the base object (the atom)
+        node = self.atom()
+
+        # 2. Loop to handle chains like x[0][1] or func()[0]
+        while self.current_token.type in (LPAREN, LBRACKET):
+            
+            # CASE A: Function Call (...)
+            if self.current_token.type == LPAREN:
+                self.eat(LPAREN)
+                args = []
+                if self.current_token.type != RPAREN:
+                    args.append(self.expr())
+                    while self.current_token.type == COMMA:
+                        self.eat(COMMA)
+                        args.append(self.expr())
+                self.eat(RPAREN)
+                
+                # Wrap the previous node in a Call node
+                # Note: node.value works if node is a Var, but if it's complex 
+                # we might need to change FunctionCallNode to take a NODE, not a string name.
+                # For now, let's assume we only call variables by name.
+                if isinstance(node, Var):
+                    node = FunctionCallNode(node.token.value, args)
+                else:
+                    raise ParserError("Can only call functions by name (for now)")
+
+            # CASE B: Array Index [...]
+            elif self.current_token.type == LBRACKET:
+                self.eat(LBRACKET)
+                index = self.expr()
+                self.eat(RBRACKET)
+                node = IndexNode(node, index)
+
+        return node
 
     def term(self):
         """Parses a 'term'. A term is a sequence of factors
