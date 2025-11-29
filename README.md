@@ -1,7 +1,6 @@
 # ⚡ SmitScript (Custom Interpreter)
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Completed-orange?style=for-the-badge)
 
 A robust, Turing-complete programming language interpreter built entirely from scratch in Python. 
