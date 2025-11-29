@@ -1,4 +1,4 @@
-# ⚡ SmitScript (Custom Interpreter)
+# ⚡ CustomScript (Custom Interpreter)
 
 ![Python](https://img.shields.io/badge/Python-3.x-blue?style=for-the-badge&logo=python)
 ![Status](https://img.shields.io/badge/Status-Completed-orange?style=for-the-badge)
